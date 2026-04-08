@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question of the Day!</title>
+  <style>
+    /* ── Google Fonts ── */
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Fredoka+One&display=swap');
+
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:   #ff6eb4;
+      --yellow: #ffe066;
+      --teal:   #3dd9c5;
+      --purple: #a78bfa;
+      --orange: #ff9f43;
+      --blue:   #60a5fa;
+      --dark:   #1e1b4b;
+      --white:  #ffffff;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+      animation: bounceIn 0.8s ease both;
+    }
+
+    .header h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2.2rem, 7vw, 4rem);
+      color: var(--white);
+      text-shadow: 4px 4px 0 var(--dark), 6px 6px 20px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+    }
+
+    .header .emoji-row {
+      font-size: 2rem;
+      margin-top: 6px;
+      animation: wiggle 2s ease-in-out infinite;
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-5deg); }
+      50%       { transform: rotate(5deg); }
+    }
+
+    /* ── Date badge ── */
+    .date-badge {
+      display: inline-block;
+      background: var(--yellow);
+      color: var(--dark);
+      font-weight: 900;
+      font-size: 0.95rem;
+      padding: 6px 18px;
+      border-radius: 50px;
+      margin-bottom: 24px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+      animation: bounceIn 0.9s ease both;
+    }
+
+    /* ── Card scene (flip) ── */
+    .scene {
+      perspective: 1000px;
+      width: min(580px, 96vw);
+      min-height: 280px;
+      margin-bottom: 28px;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      min-height: 280px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+    }
+
+    .card.flipped { transform: rotateY(180deg); }
+
+    .card__face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 32px;
+      text-align: center;
+    }
+
+    /* Front face */
+    .card__front {
+      background: var(--white);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 6px var(--yellow);
+    }
+
+    .card__front .question-number {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--purple);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .card__front .question-text {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--dark);
+      line-height: 1.3;
+    }
+
+    .card__front .tap-hint {
+      margin-top: 24px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tap-hint span { font-size: 1rem; animation: bounce 1.5s infinite; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-5px); }
+    }
+
+    /* Back face */
+    .card__back {
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 6px var(--teal);
+      transform: rotateY(180deg);
+    }
+
+    .card__back .thinking-emoji {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .card__back .back-text {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+      color: var(--white);
+      line-height: 1.4;
+    }
+
+    .card__back .flip-back {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* Loading / error states */
+    .card__front.loading .question-text {
+      color: #d1d5db;
+      font-size: 1.2rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── Bottom row ── */
+    .bottom-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: slideUp 1s ease both 0.3s;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 1rem;
+      padding: 12px 26px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+    }
+
+    .btn:hover  { transform: translateY(-3px); box-shadow: 0 9px 0 rgba(0,0,0,0.2); }
+    .btn:active { transform: translateY(2px);  box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
+
+    .btn-share    { background: var(--yellow); color: var(--dark); }
+    .btn-confetti { background: var(--pink);   color: var(--white); }
+    .btn-next     { background: var(--purple);  color: var(--white); }
+
+    /* ── Countdown ── */
+    .countdown {
+      margin-top: 28px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 14px 28px;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-align: center;
+      animation: slideUp 1s ease both 0.5s;
+    }
+
+    .countdown .timer {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    /* ── Setup banner ── */
+    .setup-banner {
+      margin-top: 24px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 16px;
+      padding: 18px 24px;
+      max-width: 580px;
+      width: 100%;
+      font-size: 0.88rem;
+      color: var(--dark);
+      line-height: 1.6;
+      animation: slideUp 1s ease both 0.6s;
+    }
+
+    .setup-banner strong { color: var(--purple); }
+    .setup-banner code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      word-break: break-all;
+    }
+
+    .setup-banner a { color: var(--blue); }
+
+    /* ── Confetti canvas ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Animations ── */
+    @keyframes bounceIn {
+      0%   { opacity: 0; transform: scale(0.5) translateY(-30px); }
+      60%  { opacity: 1; transform: scale(1.08) translateY(4px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <h1>✨ Question of the Day!</h1>
+  <div class="emoji-row">🎉 🙋 💬 🤔 🎊</div>
+</div>
+
+<div class="date-badge" id="date-badge">Loading date…</div>
+
+<!-- ── CARD ── -->
+<div class="scene" id="scene" title="Click to flip!">
+  <div class="card" id="card">
+    <!-- Front -->
+    <div class="card__face card__front loading" id="card-front">
+      <div class="question-number" id="question-number">QUESTION #–</div>
+      <div class="question-text" id="question-text">Loading today's question…</div>
+      <div class="tap-hint"><span>👆</span> Tap to flip!</div>
+    </div>
+    <!-- Back -->
+    <div class="card__face card__back" id="card-back">
+      <div class="thinking-emoji">🤔💭</div>
+      <div class="back-text" id="back-text">Take a moment to think… then share with your team!</div>
+      <div class="flip-back">Tap to flip back</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BUTTONS ── -->
+<div class="bottom-row">
+  <button class="btn btn-confetti" onclick="launchConfetti()">🎊 Celebrate!</button>
+  <button class="btn btn-share"    onclick="shareQuestion()">📤 Share</button>
+  <button class="btn btn-next"     onclick="previewNext()">🔀 Preview Next</button>
+</div>
+
+<!-- ── COUNTDOWN ── -->
+<div class="countdown">
+  <div>Next question in</div>
+  <div class="timer" id="countdown-timer">–:–:–</div>
+</div>
+
+<!-- ── SETUP INSTRUCTIONS ── -->
+<div class="setup-banner" id="setup-banner">
+  <strong>📋 Connect Your Google Sheet</strong><br><br>
+  1. Open your Google Sheet and go to <strong>File → Share → Publish to web</strong><br>
+  2. Choose your sheet, select <strong>Comma-separated values (.csv)</strong>, and click <strong>Publish</strong><br>
+  3. Copy the URL and paste it into the <code>SHEET_CSV_URL</code> variable at the top of this file's <code>&lt;script&gt;</code> section<br><br>
+  Your sheet should have a column called <strong><code>question</code></strong> (row 1 = header).<br>
+  <a href="#" onclick="document.getElementById('setup-banner').style.display='none';return false;">✕ Dismiss</a>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────────
+  //  CONFIGURATION — paste your published CSV URL here
+  // ─────────────────────────────────────────────────
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRM72mhdxUGHjAe05ayUBDHGJ8vbjjVp4kc_-dKNLprpGfImeecOrabEunqgvgoqI-gqgm2NuxeEgB1/pub?gid=2097059983&single=true&output=csv';
+
+  // ─────────────────────────────────────────────────
+  //  Sample questions (used when no sheet is connected)
+  // ─────────────────────────────────────────────────
+  const SAMPLE_QUESTIONS = [
+    "If you could have dinner with any fictional character, who would it be and why?",
+    "What's the most useless superpower you'd still love to have?",
+    "If your life had a theme song right now, what would it be?",
+    "What's something you recently Googled that you're slightly embarrassed about?",
+    "If you could teleport anywhere for lunch today, where are you going?",
+    "What skill do you have that would surprise your coworkers?",
+    "What's your hot take on a food combination that most people think is weird?",
+    "If you could live in any decade (past or future), which would you choose?",
+    "What's the best piece of advice you've ever ignored?",
+    "If your pet (real or imagined) could talk, what would be the first thing it says about you?",
+    "What emoji best describes your personality and why?",
+    "If you had to teach a masterclass on something ridiculous, what would it be?",
+    "What's a movie or show you're embarrassed you've never seen?",
+    "Would you rather explore outer space or the deep ocean — and why?",
+    "What's a compliment you've received that you still think about?",
+    "If you could instantly master one instrument, which would you pick?",
+    "What's the most chaotic thing that's happened to you on a Monday?",
+    "If you opened a restaurant, what would you call it and what would be the signature dish?",
+    "What's something that you think everyone secretly loves but pretends not to?",
+    "If you could swap jobs with anyone on the team for a day, who would it be?",
+  ];
+
+  // ─────────────────────────────────────────────────
+  //  Helpers
+  // ─────────────────────────────────────────────────
+
+  /** Deterministic index based on local date — same for everyone on the same day */
+  function dailyIndex(total) {
+    const d = new Date();
+    const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    return seed % total;
+  }
+
+  function formatDate(d) {
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  /** Parse CSV text → array of objects (handles quoted fields) */
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+    return lines.slice(1).map(line => {
+      const values = [];
+      let cur = '', inQ = false;
+      for (const ch of line) {
+        if (ch === '"') { inQ = !inQ; continue; }
+        if (ch === ',' && !inQ) { values.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      values.push(cur.trim());
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = values[i] ?? '');
+      return obj;
+    });
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Render question
+  // ─────────────────────────────────────────────────
+  function renderQuestion(questions) {
+    const idx    = dailyIndex(questions.length);
+    const q      = questions[idx];
+    const text   = typeof q === 'string' ? q : (q.question || q.Question || Object.values(q)[0] || '—');
+    const number = idx + 1;
+
+    document.getElementById('question-number').textContent = `QUESTION #${number} OF ${questions.length}`;
+    document.getElementById('question-text').textContent   = text;
+    document.getElementById('back-text').textContent       = `Take a moment to think about it… then share with your team! 💬`;
+    document.getElementById('card-front').classList.remove('loading');
+
+    // hide setup banner if sheet connected
+    if (SHEET_CSV_URL) document.getElementById('setup-banner').style.display = 'none';
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Load questions
+  // ─────────────────────────────────────────────────
+  async function loadQuestions() {
+    // Hide setup banner immediately if a URL is configured
+    if (SHEET_CSV_URL) document.getElementById('setup-banner').style.display = 'none';
+
+    if (!SHEET_CSV_URL) {
+      renderQuestion(SAMPLE_QUESTIONS);
+      return;
+    }
+    try {
+      const res = await fetch(SHEET_CSV_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const rows = parseCSV(text).filter(r => Object.values(r).some(v => v));
+      if (!rows.length) throw new Error('empty sheet');
+      renderQuestion(rows);
+    } catch (e) {
+      console.warn('Could not load sheet:', e.message);
+      // CORS is blocked when opening as file:// — questions still work via samples
+      // Host this file on a web server (e.g. GitHub Pages, Netlify) to load your sheet
+      renderQuestion(SAMPLE_QUESTIONS);
+      document.getElementById('question-number').textContent = 'SHEET CONNECTED — NEEDS WEB SERVER';
+    }
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Card flip
+  // ─────────────────────────────────────────────────
+  document.getElementById('scene').addEventListener('click', () => {
+    document.getElementById('card').classList.toggle('flipped');
+  });
+
+  // ─────────────────────────────────────────────────
+  //  Share
+  // ─────────────────────────────────────────────────
+  function shareQuestion() {
+    const text = document.getElementById('question-text').textContent;
+    const msg  = `✨ Question of the Day!\n\n"${text}"\n\nAnswered on ${formatDate(new Date())}`;
+    if (navigator.share) {
+      navigator.share({ title: 'Question of the Day', text: msg }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(msg).then(() => alert('Copied to clipboard! 📋')).catch(() => alert(msg));
+    }
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Preview Next (peek tomorrow's question)
+  // ─────────────────────────────────────────────────
+  async function previewNext() {
+    const questions = SHEET_CSV_URL
+      ? await fetch(SHEET_CSV_URL).then(r => r.text()).then(t => parseCSV(t)).catch(() => SAMPLE_QUESTIONS)
+      : SAMPLE_QUESTIONS;
+    const total  = questions.length;
+    const idx    = (dailyIndex(total) + 1) % total;
+    const q      = questions[idx];
+    const text   = typeof q === 'string' ? q : (q.question || q.Question || Object.values(q)[0] || '—');
+    alert(`🔮 Tomorrow's question:\n\n"${text}"`);
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Countdown to midnight
+  // ─────────────────────────────────────────────────
+  function updateCountdown() {
+    const now  = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const diff = midnight - now;
+    const h    = String(Math.floor(diff / 3_600_000)).padStart(2, '0');
+    const m    = String(Math.floor((diff % 3_600_000) / 60_000)).padStart(2, '0');
+    const s    = String(Math.floor((diff % 60_000) / 1000)).padStart(2, '0');
+    document.getElementById('countdown-timer').textContent = `${h}:${m}:${s}`;
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Confetti
+  // ─────────────────────────────────────────────────
+  const canvas  = document.getElementById('confetti-canvas');
+  const ctx     = canvas.getContext('2d');
+  let pieces    = [];
+  let animFrame = null;
+
+  const COLORS = ['#ff6eb4','#ffe066','#3dd9c5','#a78bfa','#ff9f43','#60a5fa','#f97316','#34d399'];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  function randomPiece() {
+    return {
+      x:    Math.random() * canvas.width,
+      y:    -10,
+      w:    6 + Math.random() * 10,
+      h:    10 + Math.random() * 14,
+      r:    Math.random() * Math.PI * 2,
+      dr:   (Math.random() - 0.5) * 0.2,
+      vy:   3 + Math.random() * 5,
+      vx:   (Math.random() - 0.5) * 3,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: 1,
+    };
+  }
+
+  function drawConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.r);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.r  += p.dr;
+      p.vy += 0.08; // gravity
+      if (p.y > canvas.height - 60) p.alpha -= 0.03;
+    });
+    pieces = pieces.filter(p => p.alpha > 0);
+    if (pieces.length) animFrame = requestAnimationFrame(drawConfetti);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function launchConfetti() {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    for (let i = 0; i < 180; i++) pieces.push(randomPiece());
+    drawConfetti();
+  }
+
+  // ─────────────────────────────────────────────────
+  //  Init
+  // ─────────────────────────────────────────────────
+  document.getElementById('date-badge').textContent = `📅 ${formatDate(new Date())}`;
+  loadQuestions();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Auto confetti on load 🎉
+  setTimeout(launchConfetti, 600);
+</script>
+</body>
+</html>
